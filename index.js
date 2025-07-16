@@ -16,10 +16,26 @@ dotenv.config();
 const app = express();
 
 // Middleware
+const allowedOrigins = [
+    'https://safe-space-frontend-psi.vercel.app',
+    /\.vercel\.app$/ // Allow all Vercel preview deployments
+];
+
 app.use(cors({
-    origin: 'https://safe-space-frontend-psi.vercel.app', // your Vercel frontend domain
+    origin: function(origin, callback) {
+        if (!origin || allowedOrigins.some(o => {
+                if (typeof o === 'string') return o === origin;
+                if (o instanceof RegExp) return o.test(origin);
+                return false;
+            })) {
+            callback(null, true);
+        } else {
+            callback(new Error('❌ Not allowed by CORS: ' + origin));
+        }
+    },
     credentials: true,
 }));
+
 
 // Routes
 app.use("/api", authRoutes);
