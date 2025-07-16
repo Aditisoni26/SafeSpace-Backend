@@ -1,3 +1,4 @@
+// routes/nearbySafeZones.js
 const express = require("express");
 const axios = require("axios");
 const router = express.Router();
@@ -9,18 +10,20 @@ router.get("/nearby", async(req, res) => {
         return res.status(400).json({ message: "Missing latitude or longitude" });
     }
 
-    try {
-        const overpassQuery = `
-      [out:json];
-      node
-        [amenity=police]
-        (around:5000, ${lat}, ${lng});
-      out;
-    `;
+    const query = `
+    [out:json];
+    (
+      node["amenity"="police"](around:5000,${lat},${lng});
+      way["amenity"="police"](around:5000,${lat},${lng});
+      relation["amenity"="police"](around:5000,${lat},${lng});
+    );
+    out center;
+  `;
 
+    try {
         const response = await axios.post(
             "https://overpass-api.de/api/interpreter",
-            overpassQuery, {
+            query, {
                 headers: {
                     "Content-Type": "text/plain",
                 },
@@ -28,16 +31,16 @@ router.get("/nearby", async(req, res) => {
         );
 
         const results = response.data.elements.map((el) => ({
-            name: el.tags.name || "Police Station",
-            lat: el.lat,
-            lon: el.lon,
-            address: `${el.tags["addr:street"] || ""} ${el.tags["addr:city"] || ""}`,
+            name: el.tags ?.name || "Unnamed Police Station",
+            lat: el.lat || el.center ?.lat,
+            lon: el.lon || el.center ?.lon,
+            address: `${el.tags?.["addr:street"] || ""} ${el.tags?.["addr:city"] || ""}`,
         }));
 
         res.json({ results });
     } catch (err) {
-        console.error("Overpass API Error:", err.message);
-        res.status(500).json({ message: "Failed to fetch safe zones." });
+        console.error("❌ Overpass API Error:", err.message);
+        res.status(500).json({ message: "Failed to fetch police stations." });
     }
 });
 
