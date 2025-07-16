@@ -17,10 +17,9 @@ const app = express();
 
 // Middleware
 app.use(cors({
-    origin: 'http://localhost:5173', // ✅ must match frontend
-    credentials: true // ✅ allow cookies/session
+    origin: 'https://safe-space-frontend-psi.vercel.app', // your Vercel frontend domain
+    credentials: true,
 }));
-app.use(express.json());
 
 // Routes
 app.use("/api", authRoutes);
