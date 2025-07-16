@@ -18,23 +18,23 @@ const app = express();
 // Middleware
 const allowedOrigins = [
     'https://safe-space-frontend-psi.vercel.app',
-    /\.vercel\.app$/ // Allow all Vercel preview deployments
+    /\.vercel\.app$/ // for preview deployments
 ];
 
 app.use(cors({
     origin: function(origin, callback) {
-        if (!origin || allowedOrigins.some(o => {
-                if (typeof o === 'string') return o === origin;
-                if (o instanceof RegExp) return o.test(origin);
-                return false;
-            })) {
+        if (!origin || allowedOrigins.some(o =>
+                typeof o === 'string' ? o === origin : o.test(origin)
+            )) {
             callback(null, true);
         } else {
-            callback(new Error('❌ Not allowed by CORS: ' + origin));
+            callback(new Error('Not allowed by CORS'));
         }
     },
-    credentials: true,
+    // ❌ REMOVE credentials
+    // credentials: true,
 }));
+
 
 
 // Routes
