@@ -1,7 +1,8 @@
-// routes/nearbySafeZones.js
-const express = require("express");
+
 const axios = require("axios");
-const router = express.Router();
+const express = require("express");
+const router = express.Router(); // ✅ correct
+
 
 router.get("/nearby", async(req, res) => {
     const { lat, lng } = req.query;

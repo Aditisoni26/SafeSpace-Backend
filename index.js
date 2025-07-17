@@ -8,7 +8,8 @@ const emergencyRoutes = require('./routes/emergency');
 const testRoutes = require('./routes/test');
 const aiRoutes = require("./routes/ai");
 const safezoneRoutes = require('./routes/safezone');
-const nearbySafeZonesRoutes = require("./routes/nearbySafeZones");
+const nearbyRoutes = require("./routes/nearbySafeZones");
+
 
 // Load environment variables
 dotenv.config();
@@ -38,12 +39,12 @@ app.use(cors({
 
 
 // Routes
-app.use("/api", authRoutes);
+// app.use("/api", authRoutes);
 app.use("/api/emergency", emergencyRoutes);
 app.use('/api/test', testRoutes);
 app.use("/api/ai", aiRoutes); // ✅ this is correct
 app.use("/api/safezone", safezoneRoutes);
-app.use("/api/nearby-safezones", nearbySafeZonesRoutes);
+app.use("/api/nearby", nearbyRoutes);
 // Sample route
 app.get('/', (req, res) => {
     res.send('SafeSpace Backend is Running');
