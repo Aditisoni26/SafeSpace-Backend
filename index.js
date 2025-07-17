@@ -8,7 +8,7 @@ const emergencyRoutes = require('./routes/emergency');
 const testRoutes = require('./routes/test');
 const aiRoutes = require("./routes/ai");
 const safezoneRoutes = require('./routes/safezone');
-const nearbyRoutes = require("./routes/nearbySafeZones");
+const nearbySafezonesRoutes = require("./routes/nearbySafeZones");
 
 
 // Load environment variables
@@ -19,7 +19,7 @@ const app = express();
 // Middleware
 const allowedOrigins = [
     'https://safe-space-frontend-psi.vercel.app',
-    /\.vercel\.app$/ // for preview deployments
+    /\.vercel\.app$/
 ];
 
 app.use(cors({
@@ -32,11 +32,8 @@ app.use(cors({
             callback(new Error('Not allowed by CORS'));
         }
     },
-    // ❌ REMOVE credentials
-    // credentials: true,
+
 }));
-
-
 
 // Routes
 // app.use("/api", authRoutes);
@@ -44,7 +41,7 @@ app.use("/api/emergency", emergencyRoutes);
 app.use('/api/test', testRoutes);
 app.use("/api/ai", aiRoutes); // ✅ this is correct
 app.use("/api/safezone", safezoneRoutes);
-app.use("/api/nearby", nearbyRoutes);
+app.use('/api/nearby-safezones', nearbySafezonesRoutes);
 // Sample route
 app.get('/', (req, res) => {
     res.send('SafeSpace Backend is Running');
