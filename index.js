@@ -21,8 +21,7 @@ const app = express();
 // Middleware
 const allowedOrigins = [
 
-    "http://localhost:5173",
-    'https://safe-space-frontend-psi.vercel.app',
+    "https://safe-space-frontend-1r35.vercel.app",
     /\.vercel\.app$/
 ];
 
