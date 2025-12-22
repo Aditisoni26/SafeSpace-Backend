@@ -1,4 +1,6 @@
 require('dotenv').config();
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -18,6 +20,8 @@ const app = express();
 
 // Middleware
 const allowedOrigins = [
+
+    "http://localhost:5173",
     'https://safe-space-frontend-psi.vercel.app',
     /\.vercel\.app$/
 ];
@@ -36,7 +40,8 @@ app.use(cors({
 }));
 
 // Routes
-// app.use("/api", authRoutes);
+app.use(express.json());
+app.use("/api", authRoutes);
 app.use("/api/emergency", emergencyRoutes);
 app.use('/api/test', testRoutes);
 app.use("/api/ai", aiRoutes); // ✅ this is correct

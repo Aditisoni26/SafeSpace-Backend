@@ -1,9 +1,8 @@
-// middleware/auth.js
 const jwt = require("jsonwebtoken");
 
 module.exports = function(req, res, next) {
     const authHeader = req.header("Authorization");
-    console.log("🔐 Incoming request auth header:", req.header("Authorization"));
+    console.log("🔐 Incoming request auth header:", authHeader);
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
         return res.status(401).json({ message: "Access denied. No token provided." });
@@ -12,11 +11,11 @@ module.exports = function(req, res, next) {
     const token = authHeader.split(" ")[1];
 
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET); // 👈 Make sure this matches .env
-        req.user = decoded;
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.user = { id: decoded.id }; // 🔥 normalize here
         next();
     } catch (err) {
         console.error("❌ JWT verify failed:", err.message);
-        res.status(401).json({ message: "Invalid token." });
+        return res.status(401).json({ message: "Invalid token." });
     }
 };

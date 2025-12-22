@@ -3,37 +3,50 @@ const axios = require("axios");
 const router = express.Router();
 
 router.post("/chat", async (req, res) => {
-  const { prompt } = req.body;
-
   try {
+    if (!process.env.OPENROUTER_API_KEY) {
+      return res.status(500).json({ message: "OPENROUTER_API_KEY missing" });
+    }
+
+    const { prompt } = req.body;
+    if (!prompt || !prompt.trim()) {
+      return res.status(400).json({ message: "Prompt is required" });
+    }
+
     const response = await axios.post(
       "https://openrouter.ai/api/v1/chat/completions",
       {
-        model: "mistralai/mistral-7b-instruct", // you can also try: 'meta-llama/llama-3-8b-instruct'
-        messages: [
-          {
-            role: "user",
-            content: prompt,
-          },
-        ],
+       model: "openai/gpt-3.5-turbo",
+        messages: [{ role: "user", content: prompt }],
       },
       {
         headers: {
-          "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
           "Content-Type": "application/json",
-          "HTTP-Referer": "http://localhost:5173", // Optional: your site
-          "X-Title": "SafeSpace Chat",              // Optional: app name
         },
+        timeout: 15000,
       }
     );
 
-   res.json({
-  result: response.data.choices?.[0]?.message?.content || "No AI response"
-});
+    const raw = response?.data?.choices?.[0]?.message?.content || "";
 
-  } catch (error) {
-    console.error("❌ OpenRouter Error:", error.response?.data || error.message);
-    res.status(500).json({ message: "AI chat failed" });
+    const cleaned = raw
+      .replace(/<\/?s>/gi, "")
+      .replace(/\[\/s\]/gi, "")
+      .trim();
+
+    return res.json({
+      result: cleaned || "AI responded but returned empty text.",
+    });
+
+  } catch (err) {
+    console.error("❌ AI ERROR:", err.code || err.message);
+
+    if (err.code === "ECONNABORTED") {
+      return res.status(504).json({ message: "AI timed out. Try again." });
+    }
+
+    return res.status(500).json({ message: "AI chat failed safely." });
   }
 });
 

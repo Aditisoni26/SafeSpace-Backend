@@ -14,21 +14,27 @@ const verifyToken = require("../middleware/verifyToken");
 // 🚨 Route 1: Send Alert
 router.post("/", auth, async(req, res) => {
     const { location, message } = req.body;
-    try {
-        const newAlert = new Alert({
-            user: req.user.id,
-            location,
-            message,
-        });
 
-        await newAlert.save();
+    const alert = await Alert.create({
+        user: req.user.id,
+        location,
+        message,
+    });
 
-        res.status(201).json({ message: "Emergency alert sent successfully" });
-    } catch (err) {
-        console.error(err.message);
-        res.status(500).json({ message: "Failed to send alert" });
+    const user = await User.findById(req.user.id);
+
+    for (const contact of user.trustedContacts) {
+        let phone = contact.phone;
+        if (phone && !phone.startsWith("+")) phone = "+91" + phone;
+
+        if (phone) await sendWhatsApp(phone, message);
+        if (contact.email)
+            await sendEmail(contact.email, "🚨 Emergency Alert", message);
     }
+
+    res.status(201).json({ message: "Alert sent & contacts notified" });
 });
+
 
 // ✅ Route 2: Get All Alerts of User
 router.get("/my-alerts", auth, async(req, res) => {
@@ -55,21 +61,19 @@ router.post("/my-alerts/send", auth, async(req, res) => {
         for (const contact of user.trustedContacts) {
             let phone = contact.phone;
 
-            // ✅ Add country code +91 if not present
             if (phone && !phone.startsWith("+")) {
                 phone = "+91" + phone;
             }
 
-            // ✅ Send WhatsApp message via Twilio
             if (phone) {
-                await sendWhatsApp(phone, message);
+                await sendWhatsApp(phone, message); // MUST hit here
             }
 
-            // ✅ Send Email
             if (contact.email) {
-                await sendEmail(contact.email, "🚨 Emergency Alert from SafeSpace", message);
+                await sendEmail(contact.email, "🚨 Emergency Alert", message);
             }
         }
+
 
         res.status(200).json({ message: "Contacts notified successfully!" });
     } catch (err) {
@@ -134,29 +138,35 @@ router.delete("/trusted-contacts/:id", auth, async(req, res) => {
         res.status(500).json({ message: "Failed to delete contact" });
     }
 });
-router.post('/store-recording', auth, async(req, res) => {
+router.post("/store-recording", auth, async(req, res) => {
     try {
         const { videoUrl } = req.body;
 
-        // ✅ Find the latest alert for the user
-        const latestAlert = await Alert.findOne({ user: req.user.id }).sort({ createdAt: -1 });
+        console.log("🎥 videoUrl received:", videoUrl);
 
-        if (!latestAlert) {
-            return res.status(404).json({ message: 'No alert found for this user.' });
+        if (!videoUrl) {
+            return res.status(400).json({ message: "videoUrl is required" });
         }
 
-        // ✅ Update alert with video URL
-        latestAlert.videoUrl = videoUrl;
+        const latestAlert = await Alert.findOne({ user: req.user.id })
+            .sort({ createdAt: -1 });
 
-        // ❗ Optional: don't update status if you don't use "recorded"
-        // latestAlert.status = 'recorded';
+        if (!latestAlert) {
+            return res.status(404).json({ message: "No alert found for this user." });
+        }
+
+        latestAlert.videoUrl = videoUrl;
+        latestAlert.status = "recorded";
 
         await latestAlert.save();
 
-        res.status(200).json({ message: 'Recording saved successfully', alert: latestAlert });
+        res.status(200).json({
+            message: "Recording saved successfully",
+            videoUrl,
+        });
     } catch (err) {
-        console.error('❌ Store recording error:', err);
-        res.status(500).json({ message: 'Failed to save recording' });
+        console.error("❌ Store recording error:", err);
+        res.status(500).json({ message: "Failed to save recording" });
     }
 });
 
