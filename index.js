@@ -20,7 +20,6 @@ const app = express();
 
 // Middleware
 const allowedOrigins = [
-
     "https://safe-space-frontend-1r35.vercel.app",
     /\.vercel\.app$/
 ];

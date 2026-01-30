@@ -1,6 +1,6 @@
 const axios = require("axios");
 const express = require("express");
-const router = express.Router(); // ✅ correct
+const router = express.Router();
 
 router.get("/nearby", async (req, res) => {
   try {
@@ -11,43 +11,44 @@ router.get("/nearby", async (req, res) => {
     }
 
     const query = `
-      [out:json];
+      [out:json][timeout:25];
       (
-        node["amenity"="police"](around:10000,${lat},${lng});
-        way["amenity"="police"](around:10000,${lat},${lng});
-        relation["amenity"="police"](around:10000,${lat},${lng});
+        node["amenity"="police"](around:5000,${lat},${lng});
+        way["amenity"="police"](around:5000,${lat},${lng});
+        relation["amenity"="police"](around:5000,${lat},${lng});
       );
-      out center;
+      out center tags;
     `;
-
-    console.log("📍 Latitude:", lat);
-    console.log("📍 Longitude:", lng);
-    console.log("🧾 Overpass Query:\n", query);
 
     const response = await axios.post(
       "https://overpass-api.de/api/interpreter",
       query,
-      { headers: { "Content-Type": "text/plain" } }
+      { headers: { "Content-Type": "text/plain" }, timeout: 20000 }
     );
 
-    const elements = response.data.elements;
+    const elements = response.data?.elements || [];
 
-    const safeZones = elements.map((el) => {
-      const lat = el.lat || el.center?.lat;
-      const lon = el.lon || el.center?.lon;
-      const name = el.tags?.name || "Police Station";
-      return { lat, lon, name };
-    });
+    if (elements.length === 0) {
+      return res.json({ safeZones: [] });
+    }
+
+    const safeZones = elements.map((el) => ({
+      lat: el.lat || el.center?.lat,
+      lon: el.lon || el.center?.lon,
+      name: el.tags?.name || "Police Station",
+      address:
+        el.tags?.["addr:full"] ||
+        el.tags?.["addr:street"] ||
+        "Address not available"
+    }));
 
     res.json({ safeZones });
   } catch (err) {
     console.error("❌ Overpass Error:", err.message);
     res.status(500).json({
-      message: "Failed to fetch police stations.",
-      error: err.message,
+      message: "Failed to fetch police stations."
     });
   }
 });
-
 
 module.exports = router;
