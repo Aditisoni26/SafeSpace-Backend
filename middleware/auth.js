@@ -12,7 +12,7 @@ module.exports = function(req, res, next) {
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = { id: decoded.id }; // 🔥 normalize here
+        req.user = { id: decoded.id }; //  normalize here
         next();
     } catch (err) {
         console.error("❌ JWT verify failed:", err.message);
